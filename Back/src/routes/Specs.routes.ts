@@ -11,6 +11,11 @@ async function recopilarDatosGenerales(id_proyecto: number): Promise<string> {
   const proyecto = await prisma.proyecto.findUnique({
     where: { id_proyecto },
     include: {
+      rol: {
+        include: {
+          stakeholder: true
+        }
+      },
       proceso: {
         include: {
           subproceso: {
@@ -51,8 +56,23 @@ async function recopilarDatosGenerales(id_proyecto: number): Promise<string> {
 
   if (!proyecto) throw new Error('Proyecto no encontrado');
 
-  let contenido = `PROYECTO: ${proyecto.nombre}\n\nDESCRIPCIÓN: ${proyecto.descripcion ?? 'Sin descripción'}\n\n`;
+  let contenido = `PROYECTO: ${proyecto.nombre ?? 'Sin nombre'}\n\nDESCRIPCIÓN: ${proyecto.descripcion ?? 'Sin descripción'}\n\n`;
   if (proyecto.problema_a_resolver) contenido += `PROBLEMA A RESOLVER: ${proyecto.problema_a_resolver}\n\n`;
+
+  // Extraemos los roles y sus stakeholders asociados
+  if (proyecto.rol && proyecto.rol.length > 0) {
+    contenido += `INFORMACIÓN DEL PROYECTO (Roles y Stakeholders):\n`;
+    for (const r of proyecto.rol) {
+      contenido += `- Rol: ${r.nombre}\n`;
+      
+      if (r.stakeholder && r.stakeholder.length > 0) {
+        for (const s of r.stakeholder) {
+          contenido += `  * Stakeholder: ${s.nombre} (${s.area ?? 'Sin área'})\n`;
+        }
+      }
+    }
+    contenido += '\n';
+  }
 
   for (const proceso of proyecto.proceso) {
     contenido += `PROCESO\nID: ${proceso.id_proceso}\nNombre: ${proceso.nombre}\nDescripción: ${proceso.descripcion ?? ''}\n\n`;
@@ -116,7 +136,7 @@ async function recopilarDatosGenerales(id_proyecto: number): Promise<string> {
             contenido += `Tema: ${f.tema}\n`;
             if (f.conclusiones) contenido += `Conclusiones: ${f.conclusiones}\n`;
             for (const p of f.participante_focus_group) {
-              contenido += `- ${p.stakeholder.nombre} (${p.stakeholder.area ?? 'Sin área'})\n`;
+              contenido += `- ${p.stakeholder?.nombre ?? 'Desconocido'} (${p.stakeholder?.area ?? 'Sin área'})\n`;
             }
             for (const i of f.idea_generada) {
               contenido += `Idea: ${i.idea ?? ''}${i.puntucacion ? ` (${i.puntucacion} pts)` : ''}\n`;

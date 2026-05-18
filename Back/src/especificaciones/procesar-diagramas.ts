@@ -4,13 +4,18 @@ interface Nodo {
   type: string;
   data: any;
   groupId?: string;
+  parentNode?: string;
   points?: { x: number; y: number }[];
 }
 
 interface Arista {
   source: string;
   target: string;
-  data?: { label?: string };
+  data?: { 
+    label?: string; 
+    mensaje?: string;
+    [key: string]: any; // Esto permite que acepte otras propiedades
+  };
   points?: { x: number; y: number }[];
 }
 
@@ -28,22 +33,34 @@ function procesarDiagramaClase(diagrama: Diagrama): string {
 
   for (const nodo of nodos) {
     const { type, data } = nodo;
-    if (!['diagramaClase', 'diagramaInterfaz', 'diagramaEnum'].includes(type)) continue;
+    const typeLower = type.toLowerCase();
+    
+    const esClase = typeLower.includes('clas');
+    const esInterfaz = typeLower.includes('interfa');
+    const esEnum = typeLower.includes('enum');
 
-    switch (type) {
-      case 'diagramaClase':   contenido += `Clase: ${data.nombre}`; break;
-      case 'diagramaInterfaz': contenido += `Interfaz ${data.nombre}`; break;
-      case 'diagramaEnum':    contenido += `Enum ${data.nombre}`; break;
-    }
+    if (!esClase && !esInterfaz && !esEnum) continue;
 
-    if (data.atributos?.length > 0) {
+    const nombre = data.nombre || data.label || 'EntidadDesconocida';
+
+    if (esClase) contenido += `Clase: ${nombre}`;
+    else if (esInterfaz) contenido += `Interfaz: ${nombre}`;
+    else if (esEnum) contenido += `Enum: ${nombre}`;
+
+    // Extraemos de forma segura usando el extractor universal
+    const atributosRaw = data.atributos || data.attributes || data.propiedades || [];
+    const metodosRaw = data.metodos || data.methods || data.operaciones || [];
+
+    const atributos = extraerLista(atributosRaw);
+    if (atributos.length > 0) {
       contenido += `\nAtributos\n`;
-      for (const atributo of data.atributos) contenido += `${atributo}\n`;
+      for (const atributo of atributos) contenido += `- ${atributo}\n`;
     }
 
-    if (data.metodos?.length > 0) {
+    const metodos = extraerLista(metodosRaw);
+    if (metodos.length > 0) {
       contenido += `\nMétodos\n`;
-      for (const metodo of data.metodos) contenido += `${metodo}\n`;
+      for (const metodo of metodos) contenido += `- ${metodo}\n`;
     }
 
     const relaciones = aristas.filter(a => a.source === nodo.id || a.target === nodo.id);
@@ -53,15 +70,18 @@ function procesarDiagramaClase(diagrama: Diagrama): string {
         const origen = mapaNodos.get(rel.source);
         const destino = mapaNodos.get(rel.target);
         if (!origen || !destino) continue;
-        const esOrigen = rel.source === nodo.id;
-        if (esOrigen) {
-          contenido += `- ${origen.data.nombre} -> ${destino.data.nombre}\n`;
+        
+        const nombreOrigen = origen.data?.nombre || origen.data?.label || 'Origen';
+        const nombreDestino = destino.data?.nombre || destino.data?.label || 'Destino';
+        
+        if (rel.source === nodo.id) {
+          contenido += `- ${nombreOrigen} -> ${nombreDestino}\n`;
         } else {
-          contenido += `- ${destino.data.nombre} -> ${origen.data.nombre}\n`;
+          contenido += `- ${nombreDestino} -> ${nombreOrigen}\n`;
         }
       }
     }
-    contenido += '\n';
+    contenido += '\n\n';
   }
   return contenido;
 }
@@ -73,20 +93,28 @@ function procesarDiagramaCasosUso(diagrama: Diagrama): string {
 
   for (const nodo of nodos) mapaNodos.set(nodo.id, nodo);
 
-  const boundary = nodos.find(n => n.type === 'boundary');
-  if (boundary) contenido += `Sistema: ${boundary.data.nombreBoundary}\n\n`;
+  // Filtros relajados
+  const boundary = nodos.find(n => n.type.toLowerCase().includes('boundary') || n.type.toLowerCase().includes('sistema'));
+  const actores = nodos.filter(n => n.type.toLowerCase().includes('actor'));
+  
+  // Si no es boundary ni actor, lo tratamos como caso de uso (atrapa a los óvalos "default")
+  const casosUso = nodos.filter(n => 
+      !n.type.toLowerCase().includes('actor') && 
+      !n.type.toLowerCase().includes('boundary') &&
+      !n.type.toLowerCase().includes('sistema')
+  );
 
-  const actores = nodos.filter(n => n.type === 'actor');
+  if (boundary) contenido += `Sistema: ${obtenerNombreNodo(boundary)}\n\n`;
+
   if (actores.length > 0) {
     contenido += `Actores:\n`;
-    for (const actor of actores) contenido += `- ${actor.data.textoActor}\n`;
+    for (const actor of actores) contenido += `- ${obtenerNombreNodo(actor)}\n`;
     contenido += '\n';
   }
 
-  const casosUso = nodos.filter(n => n.type === 'casoUso');
   if (casosUso.length > 0) {
     contenido += `Casos de uso:\n`;
-    for (const caso of casosUso) contenido += `- ${caso.data.textoCasoUso}\n`;
+    for (const caso of casosUso) contenido += `- ${obtenerNombreNodo(caso)}\n`;
     contenido += '\n';
   }
 
@@ -96,9 +124,8 @@ function procesarDiagramaCasosUso(diagrama: Diagrama): string {
       const origen = mapaNodos.get(arista.source);
       const destino = mapaNodos.get(arista.target);
       if (!origen || !destino) continue;
-      const nombreOrigen = origen.type === 'actor' ? origen.data.textoActor : origen.data.textoCasoUso;
-      const nombreDestino = destino.type === 'actor' ? destino.data.textoActor : destino.data.textoCasoUso;
-      contenido += `- ${nombreOrigen} interactúa con ${nombreDestino}\n`;
+      
+      contenido += `- ${obtenerNombreNodo(origen)} interactúa con ${obtenerNombreNodo(destino)}\n`;
     }
   }
   return contenido + '\n';
@@ -111,11 +138,12 @@ function procesarDiagramaPaquetes(diagrama: Diagrama): string {
 
   for (const nodo of nodos) mapaNodos.set(nodo.id, nodo);
 
-  const paquetes = nodos.filter(n => n.type === 'paquete' || n.type === 'paquete_v2');
+  const paquetes = nodos.filter(n => n.type.toLowerCase().includes('paquet') || n.type.toLowerCase().includes('package'));
+  const getPadreId = (nodo: Nodo) => nodo.parentNode || nodo.groupId;
 
   if (paquetes.length > 0) {
     contenido += `Paquetes:\n`;
-    for (const p of paquetes) contenido += `- ${p.data.nombrePaquete}\n`;
+    for (const p of paquetes) contenido += `- ${obtenerNombreNodo(p)}\n`;
     contenido += '\n';
   }
 
@@ -125,19 +153,19 @@ function procesarDiagramaPaquetes(diagrama: Diagrama): string {
       const origen = mapaNodos.get(arista.source);
       const destino = mapaNodos.get(arista.target);
       if (!origen || !destino) continue;
-      contenido += `- ${origen.data.nombrePaquete} depende de ${destino.data.nombrePaquete}\n`;
+      contenido += `- ${obtenerNombreNodo(origen)} depende de ${obtenerNombreNodo(destino)}\n`;
     }
     contenido += '\n';
   }
 
-  const paquetesPadre = paquetes.filter(p => !p.groupId);
+  const paquetesPadre = paquetes.filter(p => !getPadreId(p));
   if (paquetesPadre.length > 0) {
     contenido += `Jerarquía de paquetes:\n`;
     for (const padre of paquetesPadre) {
-      const hijos = paquetes.filter(p => p.groupId === padre.id);
+      const hijos = paquetes.filter(p => getPadreId(p) === padre.id);
       if (hijos.length === 0) continue;
-      contenido += `\n${padre.data.nombrePaquete}\n`;
-      for (const hijo of hijos) contenido += `- ${hijo.data.nombrePaquete}\n`;
+      contenido += `\n${obtenerNombreNodo(padre)}\n`;
+      for (const hijo of hijos) contenido += `- ${obtenerNombreNodo(hijo)}\n`;
     }
   }
   return contenido + '\n';
@@ -145,18 +173,18 @@ function procesarDiagramaPaquetes(diagrama: Diagrama): string {
 
 function procesarDiagramaSecuencia(diagrama: Diagrama): string {
   const { nodes: nodos, edges: aristas } = diagrama;
-  const lifelines = new Map<string, string>();
+  const mapaNombres = new Map<string, string>();
 
+  // Mapeamos todos los nodos usando el buscador maestro
   for (const nodo of nodos) {
-    if (nodo.type === 'lineaVida' || nodo.type === 'actorSecuencia') {
-      lifelines.set(nodo.id, nodo.data.nombreParticipante);
-    }
+    mapaNombres.set(nodo.id, obtenerNombreNodo(nodo));
   }
 
   const activacionAParticipante = new Map<string, string>();
   for (const nodo of nodos) {
-    if (nodo.type === 'activacion') {
-      const participante = lifelines.get(nodo.groupId ?? '');
+    if (nodo.type.toLowerCase().includes('activacion') || nodo.type.toLowerCase().includes('activation')) {
+      const idPadre = nodo.parentNode || nodo.groupId || '';
+      const participante = mapaNombres.get(idPadre);
       if (participante) activacionAParticipante.set(nodo.id, participante);
     }
   }
@@ -166,19 +194,68 @@ function procesarDiagramaSecuencia(diagrama: Diagrama): string {
   );
 
   const lineas = aristasOrdenadas.map(arista => {
-    const origen = activacionAParticipante.get(arista.source) ?? arista.source;
-    const destino = activacionAParticipante.get(arista.target) ?? arista.target;
-    return `${origen} -> ${destino}: ${arista.data?.label ?? ''}`;
+    const origen = activacionAParticipante.get(arista.source) ?? mapaNombres.get(arista.source) ?? arista.source;
+    const destino = activacionAParticipante.get(arista.target) ?? mapaNombres.get(arista.target) ?? arista.target;
+    
+    // Si no le pusiste texto a la flecha, usamos 'interactúa con'
+    const accion = arista.data?.label || arista.data?.mensaje || arista.data?.text || 'interactúa con';
+    
+    return `${origen} -> ${destino}: ${accion}`;
   });
 
   return lineas.join('\n') + '\n';
 }
 
+function obtenerNombreNodo(nodo: Nodo): string {
+  if (!nodo || !nodo.data) return nodo?.id || 'Desconocido';
+  
+  const nombreDirecto = nodo.data.nombrePaquete 
+      || nodo.data.nombreParticipante 
+      || nodo.data.textoActor 
+      || nodo.data.textoCasoUso
+      || nodo.data.nombre 
+      || nodo.data.label 
+      || nodo.data.text 
+      || nodo.data.texto 
+      || nodo.data.title;
+      
+  if (nombreDirecto && typeof nombreDirecto === 'string' && nombreDirecto.trim() !== '') {
+      if (nodo.data.title && nodo.data.label) {
+          return `${nodo.data.title} - ${nodo.data.label}`;
+      }
+      return nombreDirecto;
+  }
+
+  const valoresString = Object.values(nodo.data).filter(v => typeof v === 'string' && v.trim() !== '');
+  if (valoresString.length > 0) {
+      return valoresString.join(' | '); 
+  }
+
+  return nodo.id;
+}
+
+// Extrae texto de arreglos, ya sean de strings o de objetos
+function extraerLista(lista: any): string[] {
+  if (!Array.isArray(lista)) return [];
+  return lista.map(item => {
+    if (typeof item === 'string') return item;
+    if (item && typeof item === 'object') {
+      // Busca cualquier llave que suene a que contiene el nombre/texto
+      return item.nombre || item.name || item.texto || item.label || item.valor || JSON.stringify(item);
+    }
+    return String(item);
+  });
+}
+
 const procesadores: Record<string, (d: Diagrama) => string> = {
   clase: procesarDiagramaClase,
+  class: procesarDiagramaClase,
   casos_uso: procesarDiagramaCasosUso,
+  use_case: procesarDiagramaCasosUso,
   paquetes: procesarDiagramaPaquetes,
+  package: procesarDiagramaPaquetes,
   secuencia: procesarDiagramaSecuencia,
+  sequence: procesarDiagramaSecuencia,
 };
 
 export function procesarDiagrama(tipo: string, jsonDiagrama: string): string {
