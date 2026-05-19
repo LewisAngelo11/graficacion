@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router";
 import { useEffect, useState, type SetStateAction } from "react";
-import { DashboardAlt, ArrowLeftStroke, Calendar, Pencil, Community, Workflow, ArrowOutLeftSquareHalf } from "@boxicons/react";
+import { DashboardAlt, ArrowLeftStroke, Calendar, Pencil, Community, Workflow, ArrowOutLeftSquareHalf, X } from "@boxicons/react";
 import ResumeProject from "../components/ConfigProjectsComponents/ResumeProject";
 import EditProject from "../Modals/ModalChildrens/ProjectsModals/EditProject";
 import Process from "../components/ProcessesComponents/Processes";
@@ -24,6 +24,7 @@ export default function ConfigProjects() {
     const [mobileOpen, setMobileOpen] = useState<boolean>(false);
     // Estado que maneja la apertura de el modal para editar el proyecto
     const [openEditModal, setOpenEditModal] = useState<boolean>(false);
+    const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
     const [option, setOption] = useState<OptionsProjects>("Roles");
     const [project, setProject] = useState<Proyecto | null>(null);
     const [projectStatus, setProjectStatus] = useState<string>("");
@@ -168,12 +169,20 @@ export default function ConfigProjects() {
                                     </div>
                                 </dl>
                             </div>
-                            <button
-                                className="button-edit-project"
-                                onClick={() => setOpenEditModal(true)}
-                            >
-                                <Pencil size="xs" /> Editar
-                            </button>
+                            <div className="buttons-projects-actions-container">
+                                <button
+                                    className="button-edit-project"
+                                    onClick={() => setOpenEditModal(true)}
+                                >
+                                    <Pencil size="xs" /> Editar
+                                </button>
+                                <button
+                                    className="button-cancel-project"
+                                    onClick={() => setOpenDeleteModal(true)}
+                                >
+                                    <X fill="#ff0000ff"/>
+                                </button>
+                            </div>
                         </div>
                     </header>
                     <ResumeProject

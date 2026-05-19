@@ -54,6 +54,13 @@
     background-color: #cdcdcd;
 }
 
+.buttons-projects-actions-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .6rem;
+}
+
 .button-edit-project {
     padding: .6rem 1rem;
     display: flex;
@@ -68,6 +75,22 @@
 
 .button-edit-project:hover {
     transform: translateY(-5px);
+}
+
+.button-cancel-project {
+    padding: .6rem .8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    gap: .4rem;
+    transition: all .2s ease;
+}
+
+.button-cancel-project:hover {
+    background: var(--border-container);
 }
 
 .principal-info {
