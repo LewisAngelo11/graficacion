@@ -36,7 +36,7 @@ export default function RolesDelete({ idRol, setSelectedDeleteId, onDeleteRol }:
 
     return (
         <div className="alert-delete-modal">
-            <h2>¿Estás seguro que quieres eliminar este Rol? 😱</h2>
+            <h2>¿Estás seguro que quieres eliminar este Rol?</h2>
             <div className="buttons-div-delete">
                 <button
                     className="cancel-button-delete"

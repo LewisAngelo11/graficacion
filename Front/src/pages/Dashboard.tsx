@@ -9,12 +9,15 @@ import { counterStatusProjects } from "../utils/counterStatusProjects";
 import type { Proyecto } from "../Types/Proyectos";
 import type { Rol } from "../Types/Roles";
 
+
 export default function Dashboard() {
     const navigate = useNavigate();
     const [collapsed, setCollapsed] = useState<boolean>(false);
     const [mobileOpen, setMobileOpen] = useState<boolean>(false);
     const [projects, setProjects] = useState<Proyecto[]>([]);
     const [roles, setRoles] = useState<Rol[]>([]);
+    const [nombreUsuario, setNombreUsuario] = useState<string>("");
+    const [correoUsuario, setCorreoUsuario] = useState<string>("");
 
     // Valores derivados de projects para mostrar el conteo en el sidebar
     const totalProyectos = projects.length;
@@ -29,6 +32,28 @@ export default function Dashboard() {
     const token = localStorage.getItem("token");
     if (!token) {
         navigate("/");
+    }
+
+    const getInfoUser = async () => {
+        const token = localStorage.getItem("token")
+        try {
+            const response = await fetch(`${API_URL}/auth/info`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error("Hubo un error al consultar la info del usuario");
+            }
+
+            const data = await response.json();
+            setNombreUsuario(data.nombre);
+            setCorreoUsuario(data.email);
+        } catch (err: any) {
+            console.error("Error en la petición", err.message);
+        }
     }
 
     const getProjects = async () => {
@@ -66,6 +91,7 @@ export default function Dashboard() {
     const totalStakeholders = roles.map(r => r.stakeholder).flat().length;
 
     useEffect(() => {
+        getInfoUser();
         getProjects();
         getRoles();
     }, []);
@@ -92,6 +118,8 @@ export default function Dashboard() {
                     setCollapsed={setCollapsed}
                     mobileOpen={mobileOpen}
                     setMobileOpen={setMobileOpen}
+                    nombreUsuario={nombreUsuario}
+                    correoUsuario={correoUsuario}
                 />
                 <Projects
                     projects={projects}

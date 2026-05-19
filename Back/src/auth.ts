@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv'; 
 import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
+import { verifyToken } from './middleware/auth.middleware';
 
 dotenv.config();
 
@@ -101,6 +102,27 @@ router.post('/register', async (req: Request, res: Response) => {
         console.log(error);
         res.status(500).json('Hubo un error al crear el usuario')
     }
-})
+});
+
+router.get('/info', verifyToken, async (req: any, res: Response) => {
+    try {
+        const idUsuario = req.usuario.id;
+        console.log(idUsuario);
+        const usuario = await prisma.usuario.findUnique({
+            where: {
+                id_usuario: Number(idUsuario)
+            }
+        });
+
+        if (!usuario) {
+            res.status(400).json({ message: "El usuario no existe" });
+        }
+
+        res.status(200).json(usuario)
+    } catch (error) {
+        console.error("Hubo un error al obtener el usuario:", error);
+        res.status(500).json({ message: "Hubo un error interno al obrtener la info del usuario." });
+    }
+}) 
 
 export default router;

@@ -1,6 +1,7 @@
-import { useContext, useState } from "react";
+import { useContext, useState, type SetStateAction } from "react";
 import { ProjectIdContext } from "../../../pages/ConfigProjects";
 import "./RolesCreate.css";
+import type { Rol } from "../../../Types/Roles";
 
 type estatusRol = "A" | "I" | "E";
 
@@ -10,7 +11,15 @@ interface Form {
     estatus: estatusRol;
 }
 
-export default function RolesCreate() {
+interface SetCreateRoleProp {
+    setCreateRole: React.Dispatch<SetStateAction<boolean>>;
+}
+
+interface SetRoleProp {
+    setRoles: React.Dispatch<SetStateAction<Rol[]>>;
+}
+
+export default function RolesCreate({setCreateRole, setRoles}: SetCreateRoleProp & SetRoleProp) {
     const projectId = useContext(ProjectIdContext); // Acceder al contexto del proyecto seleccionado
     // Formulario para crear el rol
     const [form, setForm] = useState<Form>({
@@ -54,8 +63,8 @@ export default function RolesCreate() {
             }
 
             const data = await response.json();
-            console.log(data);
-
+            setCreateRole(false);
+            setRoles(prev => [...prev, data]);
         } catch (err) {
             console.error("Error en la petición:", err);
         }

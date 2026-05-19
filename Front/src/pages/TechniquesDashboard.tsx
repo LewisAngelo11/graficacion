@@ -56,6 +56,8 @@ export default function TechniquesDashboard() {
     const [addTechnique, setAddTechnique] = useState<boolean>(false);
     const [selectedTechnique, setSelectedTechnique] = useState<SelectedTecnique>("Vista General");
     const [selectedTechniqueData, setSelectedTechniqueData] = useState<Tecnica | null>(null);
+    const [nombreUsuario, setNombreUsuario] = useState<string>("");
+    const [correoUsuario, setCorreoUsuario] = useState<string>("");
 
     // Estado para las técnicas
     const [techniques, setTechniques] = useState<Tecnica[]>([]);
@@ -67,6 +69,30 @@ export default function TechniquesDashboard() {
         nombre: "",
         descripcion: ""
     });
+
+    const API_URL = import.meta.env.VITE_API_URL;
+    const token = localStorage.getItem("token");
+
+    const getInfoUser = async () => {
+        try {
+            const response = await fetch(`${API_URL}/auth/info`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error("Hubo un error al consultar la info del usuario");
+            }
+
+            const data = await response.json();
+            setNombreUsuario(data.nombre);
+            setCorreoUsuario(data.email);
+        } catch (err: any) {
+            console.error("Error en la petición", err.message);
+        }
+    }
 
     const getSubprocesoAndTechniques = async () => {
         const token = localStorage.getItem("token");
@@ -136,6 +162,7 @@ export default function TechniquesDashboard() {
 
     useEffect(() => {
         getSubprocesoAndTechniques();
+        getInfoUser();
     }, [addTechnique]); // Recargar técnicas si addTechnique cambia (por ejemplo al cerrar el modal)}
 
     console.log(techniques)
@@ -164,6 +191,8 @@ export default function TechniquesDashboard() {
                     setCollapsed={setCollapsed}
                     mobileOpen={mobileOpen}
                     setMobileOpen={setMobileOpen}
+                    nombreUsuario={nombreUsuario}
+                    correoUsuario={correoUsuario}
                 />
                 {!addTechnique && selectedTechnique === "Vista General" && (
                     <section className="techniques-container">

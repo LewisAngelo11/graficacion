@@ -1,4 +1,4 @@
-import { User, DockLeft } from "@boxicons/react";
+import { DockLeft } from "@boxicons/react";
 import "./HeaderDashboard.css"
 import type { SetStateAction } from "react";
 
@@ -9,11 +9,14 @@ interface CollapsedProp {
     setMobileOpen: React.Dispatch<SetStateAction<boolean>>;
 }
 
-export default function HeaderDashboard({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: CollapsedProp ) {
-    const nombre = "Usuario"
-    const correo = "usuario_prueba@mail.com";
+interface UserInfoProp {
+    nombreUsuario: string;
+    correoUsuario: string;
+}
 
-    const letterName = nombre.split("");
+export default function HeaderDashboard({ collapsed, setCollapsed, mobileOpen, setMobileOpen, nombreUsuario, correoUsuario }: CollapsedProp & UserInfoProp ) {
+
+    const letterName = nombreUsuario.split("");
 
     return (
         <header className="header">
@@ -30,13 +33,13 @@ export default function HeaderDashboard({ collapsed, setCollapsed, mobileOpen, s
                     <p className="letter-name">{letterName[0]}</p>
                 </div>
                 <div className="info">
-                    <p>¡Hola! {nombre}</p>
-                    <p>{correo}</p>
+                    <p>¡Hola! {nombreUsuario}</p>
+                    <p>{correoUsuario}</p>
                 </div>
             </section>
-            <section className="options-buttons">
+            {/* <section className="options-buttons">
                 <button className="button-one"><User pack="filled" /> Mi Perfil</button>
-            </section>
+            </section> */}
         </header>
     );
 }

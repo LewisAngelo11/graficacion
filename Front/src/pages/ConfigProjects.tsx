@@ -29,6 +29,8 @@ export default function ConfigProjects() {
     const [projectStatus, setProjectStatus] = useState<string>("");
     // State para cambiar el valor del contexto del id del proyecto
     const [projectId, setProjectId] = useState<number | null>(null);
+    const [nombreUsuario, setNombreUsuario] = useState<string>("");
+    const [correoUsuario, setCorreoUsuario] = useState<string>("");
 
     // Con el hook "useParams" obtenemos el id pasado en la ruta desde el componente Project
     const { id_project } = useParams();
@@ -41,12 +43,35 @@ export default function ConfigProjects() {
         "Cancelado": "cancelado"
     };
 
+    const API_URL = import.meta.env.VITE_API_URL;
+
     // Función que asigna la clase de CSS dinámicamente dependiendo del estatus del proyecto
     const checkStatus = (estatus: string) => {
         return statusClasses[estatus] || "planificacion"
     };
 
     const token = localStorage.getItem("token");
+
+    const getInfoUser = async () => {
+        try {
+            const response = await fetch(`${API_URL}/auth/info`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error("Hubo un error al consultar la info del usuario");
+            }
+
+            const data = await response.json();
+            setNombreUsuario(data.nombre);
+            setCorreoUsuario(data.email);
+        } catch (err: any) {
+            console.error("Error en la petición", err.message);
+        }
+    }
 
     const getProject = async () => {
         try {
@@ -87,6 +112,7 @@ export default function ConfigProjects() {
 
     useEffect(() => {
         getProject();
+        getInfoUser();
     }, []);
 
     return (
@@ -109,6 +135,8 @@ export default function ConfigProjects() {
                     setCollapsed={setCollapsed}
                     mobileOpen={mobileOpen}
                     setMobileOpen={setMobileOpen}
+                    nombreUsuario={nombreUsuario}
+                    correoUsuario={correoUsuario}
                 />
                 <section className="config-content">
                     <header className="configurate-header">

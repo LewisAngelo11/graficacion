@@ -97,7 +97,12 @@ export default function Roles() {
 
             {createRole &&
                 <ModalCreate
-                    children={<RolesCreate />}
+                    children={
+                        <RolesCreate
+                            setCreateRole={setCreateRole}
+                            setRoles={setRoles}
+                        />
+                    }
                     setOpen={setCreateRole} />
             }
             <div className="roles-list">

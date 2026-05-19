@@ -41,7 +41,7 @@ export default function StakeholdersDelete({ idStakeholder, setSelectedDeleteId,
 
     return (
         <div className="alert-delete-stakeholder">
-            <h2>¿Estás seguro que quieres eliminar este Stakeholder? 😱</h2>
+            <h2>¿Estás seguro que quieres eliminar este Stakeholder?</h2>
             <div className="buttons-div-delete">
                 <button
                     className="cancel-button-delete-stake"
