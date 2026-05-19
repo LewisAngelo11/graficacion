@@ -8,8 +8,7 @@ const INSTRUCCIONES_AGENTE = `# 01_INSTRUCCIONES_AGENTE
 
 ## OBJETIVO
 Eres un agente implementador. Tu única tarea es construir desde cero la aplicación descrita en estos archivos, respetando estrictamente la arquitectura, el modelo de datos y los requisitos definidos. 
-No hagas preguntas. No pidas confirmación. No propongas alternativas. 
-Si un detalle no está especificado, aplica la convención estándar del stack. Sigue el flujo de los archivos sin desviarte de este.
+No hagas preguntas. No pidas confirmación. No propongas alternativas. Si un detalle no está especificado, aplica la convención estándar del stack.
 
 ## STACK 
 | Capa | Tecnología | Versión mínima |
@@ -57,10 +56,6 @@ Si en algún momento existe ambigüedad, elige consistencia sobre creatividad.
 ### SIEMPRE:
 - Respetar nombres exactos de 04_CLASES_SISTEMA
 - Tipar estrictamente (TypeScript strict mode)
-- Usar variables de entorno (.env) para toda configuración sensible
-- Aplicar los tokens de diseño de 06_DISEÑO en todos los componentes
-- Seguir el orden de fases definido en 07_EJECUCION
-- Generar el schema.prisma antes de cualquier servicio de backend
 - Resolver errores antes de continuar con la siguiente fase`;
 
 const PRINCIPIOS_DESARROLLO = `# 03_PRINCIPIOS_DESARROLLO
@@ -173,7 +168,7 @@ Flujo: Request → Route → Controller → Service → Prisma → BD
 ## VARIABLES DE ENTORNO
 ### Backend
 DATABASE_URL=postgresql://usuario:password@localhost:5432/lavaplus
-JWT_SECRET=tu_clave_secreta
+JWT_SECRET=Token-Rubicon
 PORT=3000
 
 ### Frontend
@@ -286,8 +281,129 @@ Criterio de salida: npm run build sin errores.
 - Backend y frontend son proyectos independientes con sus propios package.json.`;
 
 
-// Función principal: crea la carpeta y escribe todos los archivos
+const CLASES_SISTEMA = `# 04_CLASES_SISTEMA
+ 
+## OBJETIVO
+Este archivo define todas las entidades del sistema, sus atributos, tipos y relaciones. Es la **única fuente de verdad** para generar el schema.prisma, los modelos TypeScript y los DTOs del backend. Cualquier entidad, campo o relación no listada aquí **no debe ser implementada**.
+ 
+---
+ 
+## RESUMEN DE ENTIDADES
+ 
+| Entidad | Descripción |
+|---|---|
+| Empleado | Persona autenticada que opera el sistema |
+| Cliente | Persona que trae ropa a la lavandería |
+| Orden | Registro de servicio solicitado por un cliente |
+| Lote | Conjunto de prendas vinculado a una orden |
+ 
+---
+ 
+## DETALLE DE ENTIDADES
+ 
+### Empleado
+- id_empleado: Int PK autoincrement
+- nombre: String VarChar(100) requerido
+- email: String unique VarChar(100) requerido
+- password_hash: String VarChar(64) hasheado con bcrypt 10 rounds
+- estatus: String default A (A=Activo, I=Inactivo)
+- Relación: un Empleado gestiona muchas Orden (1→N)
+ 
+### Cliente
+- id_cliente: Int PK autoincrement
+- nombre: String VarChar(100) requerido
+- telefono: String unique VarChar(15) — RN-01
+- direccion: String? VarChar(200) opcional
+- fecha_registro: DateTime default now()
+- Relación: un Cliente tiene muchas Orden (1→N)
+ 
+### Orden
+- id_orden: Int PK autoincrement
+- id_cliente: Int FK → Cliente
+- id_empleado: Int FK → Empleado
+- tipo_servicio: enum (Lavado, Planchado, Tintoreria, SoloSecado)
+- es_expres: Boolean default false
+- es_domicilio: Boolean default false
+- estatus: enum default Recibida (Recibida, EnProceso, Lista, Entregada, Cancelada)
+- fecha_entrada: DateTime default now()
+- fecha_estimada: DateTime? opcional
+- fecha_entrega: DateTime? se llena al entregar
+- total: Decimal? ingresado manualmente — RN-06
+- Relaciones: pertenece a Cliente (N→1), pertenece a Empleado (N→1), tiene muchos Lote (1→N)
+ 
+### Lote
+- id_lote: Int PK autoincrement
+- id_orden: Int FK → Orden
+- num_prendas: Int total de prendas
+- descripcion: String Text — ej: "1 sudadera negra, 1 pantalón"
+- Relación: pertenece a una Orden (N→1)
+ 
+---
+ 
+## TRANSICIONES DE ESTATUS VÁLIDAS
+Recibida → EnProceso → Lista → Entregada
+Cancelada: solo desde Recibida o EnProceso. Una vez Entregada o Cancelada no puede modificarse.
+ 
+---
+ 
+## RELACIONES
+- Empleado 1→N Orden (onDelete: Restrict)
+- Cliente 1→N Orden (onDelete: Restrict)
+- Orden 1→N Lote (onDelete: Cascade)
+ 
+---
+ 
+## SCHEMA PRISMA
+ 
+model Empleado {
+  id_empleado   Int     @id @default(autoincrement())
+  nombre        String  @db.VarChar(100)
+  email         String  @unique @db.VarChar(100)
+  password_hash String  @db.VarChar(64)
+  estatus       String  @default("A") @db.VarChar(1)
+  ordenes       Orden[]
+}
+ 
+model Cliente {
+  id_cliente     Int      @id @default(autoincrement())
+  nombre         String   @db.VarChar(100)
+  telefono       String   @unique @db.VarChar(15)
+  direccion      String?  @db.VarChar(200)
+  fecha_registro DateTime @default(now())
+  ordenes        Orden[]
+}
+ 
+model Orden {
+  id_orden       Int           @id @default(autoincrement())
+  id_cliente     Int
+  id_empleado    Int
+  tipo_servicio  tipo_servicio
+  es_expres      Boolean       @default(false)
+  es_domicilio   Boolean       @default(false)
+  estatus        estatus_orden @default(Recibida)
+  fecha_entrada  DateTime      @default(now())
+  fecha_estimada DateTime?
+  fecha_entrega  DateTime?
+  total          Decimal?      @db.Decimal(10, 2)
+  cliente        Cliente       @relation(fields: [id_cliente], references: [id_cliente], onDelete: Restrict)
+  empleado       Empleado      @relation(fields: [id_empleado], references: [id_empleado], onDelete: Restrict)
+  lotes          Lote[]
+}
+ 
+model Lote {
+  id_lote     Int    @id @default(autoincrement())
+  id_orden    Int
+  num_prendas Int
+  descripcion String @db.Text
+  orden       Orden  @relation(fields: [id_orden], references: [id_orden], onDelete: Cascade)
+}
+ 
+enum tipo_servicio { Lavado Planchado Tintoreria SoloSecado }
+enum estatus_orden { Recibida EnProceso Lista Entregada Cancelada }
+`;
 
+
+// Función principal: crea la carpeta y escribe todos los archivos
 export async function generarArchivosEstaticos(
   nombreCarpeta: string,
   datosGenerales: string,
@@ -300,6 +416,7 @@ export async function generarArchivosEstaticos(
     '01_INSTRUCCIONES_AGENTE.md': INSTRUCCIONES_AGENTE,
     '02_DATOS_GENERALES.md': datosGenerales,
     '03_PRINCIPIOS_DESARROLLO.md': PRINCIPIOS_DESARROLLO,
+    '04_CLASES_SISTEMA.md': CLASES_SISTEMA,
     '05_DETALLES_TECNICOS.md': DETALLES_TECNICOS,
     '06_DISEÑO.md': DISEÑO,
     '07_EJECUCION.md': EJECUCION,
@@ -310,15 +427,8 @@ export async function generarArchivosEstaticos(
     await fs.writeFile(path.join(rutaCarpeta, nombre), contenido, 'utf-8');
   }
 
-  // Nota para el usuario: agregar 04_CLASES_SISTEMA.md manualmente
-  await fs.writeFile(
-    path.join(rutaCarpeta, '04_CLASES_SISTEMA_PENDIENTE.txt'),
-    'Agrega manualmente el archivo 04_CLASES_SISTEMA.md en esta carpeta antes de subir a Antigravity.',
-    'utf-8'
-  );
 
   return rutaCarpeta;
 }
 
-// Exporta también los textos por si los necesita el prompt del agente
-export { INSTRUCCIONES_AGENTE, PRINCIPIOS_DESARROLLO, DETALLES_TECNICOS, DISEÑO, EJECUCION };
+export { INSTRUCCIONES_AGENTE, PRINCIPIOS_DESARROLLO, CLASES_SISTEMA, DETALLES_TECNICOS, DISEÑO, EJECUCION };
