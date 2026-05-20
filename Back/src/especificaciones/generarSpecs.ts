@@ -167,12 +167,12 @@ Flujo: Request → Route → Controller → Service → Prisma → BD
 
 ## VARIABLES DE ENTORNO
 ### Backend
-DATABASE_URL=postgresql://usuario:password@localhost:5432/lavaplus
+DATABASE_URL=postgresql://postgres:password@localhost:5432/lavaplus
 JWT_SECRET=Token-Rubicon
 PORT=3000
 
 ### Frontend
-VITE_API_URL=http://localhost:3000/api`;
+VITE_API_URL=http://localhost:3001/api`;
 
 const DISEÑO = `# 06_DISEÑO
 
