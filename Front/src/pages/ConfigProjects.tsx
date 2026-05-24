@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router";
 import { useEffect, useState, type SetStateAction } from "react";
-import { DashboardAlt, ArrowLeftStroke, Calendar, Pencil, Community, Workflow, ArrowOutLeftSquareHalf, X } from "@boxicons/react";
+import { DashboardAlt, ArrowLeftStroke, Calendar, Pencil, Community, Workflow, ArrowOutLeftSquareHalf, X, File } from "@boxicons/react";
 import ResumeProject from "../components/ConfigProjectsComponents/ResumeProject";
 import EditProject from "../Modals/ModalChildrens/ProjectsModals/EditProject";
 import Process from "../components/ProcessesComponents/Processes";
@@ -12,6 +12,7 @@ import "./ConfigProjects.css"
 import Roles from "../components/RolesComponents/Roles";
 import { createContext } from 'react';
 import FlowticCard from "../components/ConfigProjectsComponents/FlowticDiagramsCard";
+import SpecsInfo from "../Modals/ModalChildrens/SpecsModal/SpecsInfo";
 
 type OptionsProjects = "Roles" | "Procesos";
 
@@ -32,6 +33,7 @@ export default function ConfigProjects() {
     const [projectId, setProjectId] = useState<number | null>(null);
     const [nombreUsuario, setNombreUsuario] = useState<string>("");
     const [correoUsuario, setCorreoUsuario] = useState<string>("");
+    const [openSpecsModal, setOpenSpecsModal] = useState<boolean>(false);
 
     // Con el hook "useParams" obtenemos el id pasado en la ruta desde el componente Project
     const { id_project } = useParams();
@@ -125,6 +127,7 @@ export default function ConfigProjects() {
                 totalRoles={totalRoles}
                 totalSubprocesos={totalSubprocesos ?? 0}
                 totalStakeholders={totalStakeholders ?? 0}
+                setOpenSpecsModal={setOpenSpecsModal}
             />
             {mobileOpen && <div
                 className="backdrop"
@@ -217,14 +220,24 @@ export default function ConfigProjects() {
                     )}
                 </section>
             </section>
-            {openEditModal && <ModalCreate
-                children={
-                    <EditProject
-                        proyecto={project}
-                        setProyecto={setProject}
-                        setOpenEditModal={setOpenEditModal}
-                    />
-                } setOpen={setOpenEditModal} />}
+            {openEditModal &&
+                <ModalCreate
+                    children={
+                        <EditProject
+                            proyecto={project}
+                            setProyecto={setProject}
+                            setOpenEditModal={setOpenEditModal}
+                        />
+                    }
+                    setOpen={setOpenEditModal} 
+                />
+            }
+            {openSpecsModal && (
+                <ModalCreate
+                    children={<SpecsInfo projectId={projectId}/>}
+                    setOpen={setOpenSpecsModal}
+                />
+            )}
         </main>
     );
 }
@@ -242,7 +255,11 @@ interface EntitiesProjectProp {
     totalSubprocesos: number;
 }
 
-function ProjectSideBar({ option, setOption, totalRoles, totalProcesos, totalStakeholders, totalSubprocesos }: OptionsProjectsProp & EntitiesProjectProp) {
+interface OpenSpecsModalProp {
+    setOpenSpecsModal: React.Dispatch<SetStateAction<boolean>>;
+}
+
+function ProjectSideBar({ option, setOption, totalRoles, totalProcesos, totalStakeholders, totalSubprocesos, setOpenSpecsModal }: OptionsProjectsProp & EntitiesProjectProp & OpenSpecsModalProp) {
     const navigate = useNavigate();
 
     const logOut = () => {
@@ -306,6 +323,12 @@ function ProjectSideBar({ option, setOption, totalRoles, totalProcesos, totalSta
                 </button>
             </section>
             <FlowticCard />
+            <div className="container-button-specs-sidebar">
+                <button onClick={() => setOpenSpecsModal(true)} className="button-specs-sidebar">
+                    <File size="xs"/>
+                    Generar Specs
+                </button>
+            </div>
             <div className="container-button-logout-sidebar">
                 <button onClick={logOut} className="button-logout-sidebar">
                     <ArrowOutLeftSquareHalf size="xs"/>
