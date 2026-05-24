@@ -205,26 +205,67 @@ async function recopilarDiagramas(id_proyecto: number): Promise<string> {
 
 // Devuelve resumen para mostrar en el modal del frontend
 
-router.get('/:id_proyecto/preview', async (req: Request, res: Response) => {
+// router.get('/:id_proyecto/preview', async (req: Request, res: Response) => {
+//   try {
+//     const id_proyecto = Number(req.params.id_proyecto);
+
+//     const [datosGenerales, diagramas] = await Promise.all([
+//       recopilarDatosGenerales(id_proyecto),
+//       recopilarDiagramas(id_proyecto)
+//     ]);
+
+//     res.json({
+//       datos_generales: datosGenerales,
+//       diagramas
+//     });
+//   } catch (error: any) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
+
+
+router.get('/:id_proyecto/specs-info', async (req: Request, res: Response) => {
   try {
     const id_proyecto = Number(req.params.id_proyecto);
 
-    const [datosGenerales, diagramas] = await Promise.all([
-      recopilarDatosGenerales(id_proyecto),
-      recopilarDiagramas(id_proyecto)
-    ]);
-
-    res.json({
-      datos_generales: datosGenerales,
-      diagramas
+    const proyecto = await prisma.proyecto.findUnique({
+      where: { id_proyecto },
+      include: {
+        rol: {
+          include: {
+            stakeholder: true
+          }
+        },
+        proceso: {
+          include: {
+            subproceso: {
+              include: {
+                tecnica_recoleccion: true
+              }
+            }
+          }
+        },
+        diagrama_uml: true
+      }
     });
+
+    if (!proyecto) {
+      return res.status(404).json({
+        error: 'Proyecto no encontrado'
+      });
+    }
+
+    res.json(proyecto);
+
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
-// Recopila datos, genera archivos y los guarda en Downloads
 
+// Recopila datos, genera archivos y los guarda en Downloads
 router.post('/:id_proyecto/generar', async (req: Request, res: Response) => {
   try {
     const id_proyecto = Number(req.params.id_proyecto);

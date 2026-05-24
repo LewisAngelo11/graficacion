@@ -230,10 +230,24 @@
     background-color: #cdcdcd;
 }
 
-.button-logout-sidebar {
+.container-button-specs-sidebar {
+    padding: .9rem;
+    display: flex;
+}
+
+.container-button-logout-sidebar {
+    margin-top: auto;
+    padding: .9rem;
+    display: flex;
+    border-top: 1px solid var(--border-container);
+}
+
+.button-logout-sidebar,
+.button-specs-sidebar {
     padding: .6rem;
     background-color: transparent;
     display: flex;
+    align-items: center;
     gap: .5rem;
     border-radius: 8px;
     border: none;
@@ -243,7 +257,8 @@
     font-size: .8rem;
 }
 
-.button-logout-sidebar:hover {
+.button-logout-sidebar:hover,
+.button-specs-sidebar:hover {
     background-color: #cdcdcd;
 }
 
