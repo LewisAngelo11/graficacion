@@ -30,7 +30,7 @@ export default function CreateNewTechnique({ onClose }: CreateNewTechniqueProps)
         } else if (techniqueType === "historiasUsuario") {
             endpoint = `${API_URL}/historiasUsuario/crear_historia/${id_subproceso}`;
         } else if (techniqueType === "entrevista") {
-            endpoint = `${API_URL}/entrevista/crear_entrevista/${id_subproceso}`;
+            endpoint = `${API_URL}/entrevistas/crear_entrevista/${id_subproceso}`;
         } else if (techniqueType === "focusGroup") {
             endpoint = `${API_URL}/focusGroup/${id_subproceso}`;
         } else if (techniqueType === "cuestionario") {
