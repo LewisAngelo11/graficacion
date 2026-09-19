@@ -159,7 +159,7 @@ model tecnica_recoleccion {
   id_tecnica                   Int                           @id @default(autoincrement())
   titulo                       String                        @db.VarChar(50)
   descripcion                  String?
-  estatus                      String                        @default("A") @db.VarChar(1)
+  estatus                      String                        @default("A") @db.VarChar(20)
   id_subproceso                Int
   id_stakeholder               Int?
   id_tecnica_catalogo          Int?
@@ -207,10 +207,10 @@ model criterio_aceptacion {
 
 model historia_usuario {
   id_historia_usario  Int                   @id @default(autoincrement())
-  titulo              String                @db.VarChar(50)
-  autor               String                @db.VarChar(30)
-  objetivo            String                @db.VarChar(50)
-  proposito           String                @db.VarChar(100)
+  titulo              String
+  autor               String
+  objetivo            String
+  proposito           String
   id_tecnica          Int?
   criterio_aceptacion criterio_aceptacion[]
   tecnica_recoleccion tecnica_recoleccion?  @relation(fields: [id_tecnica], references: [id_tecnica], onDelete: NoAction, onUpdate: NoAction)

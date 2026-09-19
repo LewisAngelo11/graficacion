@@ -45,7 +45,8 @@ router.post('/crear_historia/:id_subproceso', async (req: Request, res: Response
         id_tecnica_catalogo: Number(6),
         titulo: titulo,
         descripcion: descripcion,
-        id_subproceso: Number(id_subproceso)
+        id_subproceso: Number(id_subproceso),
+        estatus: "Planificada"
       }
     });
 
@@ -76,7 +77,8 @@ router.post('/crear_historia/:id_subproceso', async (req: Request, res: Response
 // Actualizar historia de usuario
 router.put('/actualizar_historia/:id', async (req: Request, res: Response) => {
   try {
-    const { titulo, autor, objetivo, proposito, id_tecnica, criterios_aceptacion } = req.body;
+    const { titulo, autor, objetivo, proposito, id_tecnica, criterios_aceptacion, estatus } = req.body;
+    console.log(req.body);
     const historia = await prisma.historia_usuario.update({
       where: { id_historia_usario: Number(req.params.id) },
       data: {
@@ -85,6 +87,17 @@ router.put('/actualizar_historia/:id', async (req: Request, res: Response) => {
         ...(objetivo && { objetivo }),
         ...(proposito && { proposito }),
         ...(id_tecnica !== undefined && { id_tecnica })
+      }
+    });
+
+    console.log(estatus);
+    await prisma.tecnica_recoleccion.update({
+      where: {
+        id_tecnica: Number(id_tecnica)
+      },
+      data: {
+        estatus: estatus,
+        ultima_actualizacion: new Date()
       }
     });
 
@@ -107,7 +120,8 @@ router.put('/actualizar_historia/:id', async (req: Request, res: Response) => {
 
     res.json(historia);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    console.log(error)
+    res.status(500).json({ error: error.message });
   }
 });
 

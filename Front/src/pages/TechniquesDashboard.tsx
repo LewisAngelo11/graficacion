@@ -58,6 +58,7 @@ export default function TechniquesDashboard() {
     const [selectedTechniqueData, setSelectedTechniqueData] = useState<Tecnica | null>(null);
     const [nombreUsuario, setNombreUsuario] = useState<string>("");
     const [correoUsuario, setCorreoUsuario] = useState<string>("");
+    const [estatus, setEstatus] = useState<estatusTecnica>("Planificada");
 
     // Estado para las técnicas
     const [techniques, setTechniques] = useState<Tecnica[]>([]);
@@ -133,7 +134,7 @@ export default function TechniquesDashboard() {
             }
 
             const dataTec = await responseTec.json();
-
+            console.log(dataTec);
             // Mapear los datos de BD al formato esperado por el frontend
             const mappedTechniques: Tecnica[] = dataTec.map((t: any) => ({
                 id: t.id_tecnica,
@@ -144,7 +145,8 @@ export default function TechniquesDashboard() {
                     nombre: t.tecnica_recoleccion_catalogo?.nombre || "Desconocida"
                 },
                 // Mapeo simple de estatus, ajusta según tu lógica real
-                estatus: t.estatus === "A" ? "En Progreso" : "Completada",
+                estatus: t.estatus,
+                ultima_actualizacion: t.ultima_actualizacion,
                 entrevistaData: t.entrevista?.[0] || null,
                 observacionData: t.observacion?.[0] || null,
                 historiaUsuarioData: t.historia_usuario?.[0] || null,
@@ -160,18 +162,33 @@ export default function TechniquesDashboard() {
         }
     };
 
+    const tecnicasTotales = techniques.length;
+    const tecnicasCompletadas = techniques.filter(t => t.estatus === 'Completada');
+    const tecnicasProgreso = techniques.filter(t => t.estatus === 'En Progreso');
+    const tecnicasPlanificadas = techniques.filter(t => t.estatus === 'Planificada');
+    const tecnicasCanceladas = techniques.filter(t => t.estatus === 'Eliminada');
+
     useEffect(() => {
         getSubprocesoAndTechniques();
         getInfoUser();
     }, [addTechnique]); // Recargar técnicas si addTechnique cambia (por ejemplo al cerrar el modal)}
 
-    console.log(techniques)
+    useEffect(() => {
+        if (selectedTechniqueData) {
+            setEstatus(selectedTechniqueData.estatus);
+        }
+    }, [selectedTechniqueData]);
 
     return (
         <main className={`techniques-dashboard-page ${collapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}>
             <TechniquesSidebar
                 subprocessName={subprocess.nombre}
                 subprocessDescription={subprocess.descripcion}
+                tecnicasTotales={tecnicasTotales}
+                tecnicasCompletadas={tecnicasCompletadas.length}
+                tecnicasPlanificadas={tecnicasPlanificadas.length}
+                tecnicasProgreso={tecnicasProgreso.length}
+                tecnicasCanceladas={tecnicasCanceladas.length}
                 techniques={techniques}
                 addTechnique={addTechnique}
                 setAddTechnique={setAddTechnique}
@@ -260,13 +277,17 @@ export default function TechniquesDashboard() {
                     <FormTechnique
                         tipoTecnica={tecnicasCatalogo[0]}
                         tecnica={selectedTechniqueData}
-                        children={<EntrevistaForm tecnica={selectedTechniqueData} />}
+                        estatus={estatus}
+                        setEstatus={setEstatus}
+                        children={<EntrevistaForm tecnica={selectedTechniqueData} estatus={estatus}/>}
                     />
                 )}
                 {selectedTechnique === "Focus Group" && selectedTechniqueData && (
                     <FormTechnique
                         tipoTecnica={tecnicasCatalogo[2]}
                         tecnica={selectedTechniqueData}
+                        estatus={estatus}
+                        setEstatus={setEstatus}
                         children={<FocusGroupForm tecnica={selectedTechniqueData} />}
                     />
                 )}
@@ -274,6 +295,8 @@ export default function TechniquesDashboard() {
                     <FormTechnique
                         tipoTecnica={tecnicasCatalogo[3]}
                         tecnica={selectedTechniqueData}
+                        estatus={estatus}
+                        setEstatus={setEstatus}
                         children={<ObservacionForm tecnica={selectedTechniqueData} />}
                     />
                 )}
@@ -281,13 +304,17 @@ export default function TechniquesDashboard() {
                     <FormTechnique
                         tipoTecnica={tecnicasCatalogo[4]}
                         tecnica={selectedTechniqueData}
-                        children={<HistoriasUsuarioForm tecnica={selectedTechniqueData} />}
+                        estatus={estatus}
+                        setEstatus={setEstatus}
+                        children={<HistoriasUsuarioForm tecnica={selectedTechniqueData} estatus={estatus} />}
                     />
                 )}
                 {selectedTechnique === "Documentos" && selectedTechniqueData && (
                     <FormTechnique
                         tipoTecnica={tecnicasCatalogo[5]}
                         tecnica={selectedTechniqueData}
+                        estatus={estatus}
+                        setEstatus={setEstatus}
                         children={<DocumentoForm tecnica={selectedTechniqueData} />}
                     />
                 )}
@@ -295,6 +322,8 @@ export default function TechniquesDashboard() {
                     <FormTechnique
                         tipoTecnica={tecnicasCatalogo[1]}
                         tecnica={selectedTechniqueData}
+                        estatus={estatus}
+                        setEstatus={setEstatus}
                         children={<CuestionarioForm tecnica={selectedTechniqueData} />}
                     />
                 )}
@@ -302,6 +331,8 @@ export default function TechniquesDashboard() {
                     <FormTechnique
                         tipoTecnica={tecnicasCatalogo[6]}
                         tecnica={selectedTechniqueData}
+                        estatus={estatus}
+                        setEstatus={setEstatus}
                         children={<SeguimientoForm tecnica={selectedTechniqueData} />}
                     />
                 )}
@@ -323,6 +354,11 @@ interface SetAddTechniqueProp {
 
 interface SetSelectedTechnoqueProp {
     techniques: Tecnica[];
+    tecnicasTotales: number;
+    tecnicasCompletadas: number;
+    tecnicasPlanificadas: number;
+    tecnicasProgreso: number;
+    tecnicasCanceladas: number;
     selectedTechnique: SelectedTecnique;
     setSelectedTechnique: React.Dispatch<React.SetStateAction<SelectedTecnique>>;
     setSelectedTechniqueData: React.Dispatch<React.SetStateAction<Tecnica | null>>;
@@ -330,15 +366,9 @@ interface SetSelectedTechnoqueProp {
 
 function TechniquesSidebar({
     subprocessName, subprocessDescription,
-    addTechnique, setAddTechnique,
-    techniques, setSelectedTechnique, setSelectedTechniqueData }: SubprocessSidebarProps & SetAddTechniqueProp & SetSelectedTechnoqueProp) {
+    addTechnique, setAddTechnique, techniques,
+    tecnicasTotales, tecnicasCompletadas, tecnicasPlanificadas, tecnicasProgreso, tecnicasCanceladas, setSelectedTechnique, setSelectedTechniqueData }: SubprocessSidebarProps & SetAddTechniqueProp & SetSelectedTechnoqueProp) {
     const navigate = useNavigate();
-
-    // Mock data
-    const totalTecnicas = 0;
-    const tecnicasCompletadas = 0;
-    const tecnicasEnProgreso = 0;
-    const tecnicasPlanificadas = 0;
 
     // Función para asignar el color según el estatus
     const asignarColorEstatus = (estatus: estatusTecnica) => {
@@ -368,7 +398,7 @@ function TechniquesSidebar({
             <section className="resume-techniques-sidebar">
                 <div className="resume-item">
                     <small>Técnicas Totales</small>
-                    <p>{totalTecnicas}</p>
+                    <p>{tecnicasTotales}</p>
                 </div>
                 <div className="resume-item">
                     <small>Técnicas Completadas</small>
@@ -376,11 +406,15 @@ function TechniquesSidebar({
                 </div>
                 <div className="resume-item">
                     <small>Técnicas en Progreso</small>
-                    <p>{tecnicasEnProgreso}</p>
+                    <p>{tecnicasProgreso}</p>
                 </div>
                 <div className="resume-item">
                     <small>Técnicas Planificadas</small>
                     <p>{tecnicasPlanificadas}</p>
+                </div>
+                <div className="resume-item">
+                    <small>Técnicas Canceladas</small>
+                    <p>{tecnicasCanceladas}</p>
                 </div>
             </section>
             <section className="general-view-techniques-sidebar">
@@ -393,7 +427,7 @@ function TechniquesSidebar({
                 </button>
                 <section className="techniques-list">
                     <header className="header-techniques-list">
-                        <span>TÉCNICAS ({totalTecnicas})</span>
+                        <span>TÉCNICAS ({tecnicasTotales})</span>
                         {techniques.length > 0 && (
                             <button className="add-technique-button-sidebar"><Plus size="xs" /></button>
                         )}

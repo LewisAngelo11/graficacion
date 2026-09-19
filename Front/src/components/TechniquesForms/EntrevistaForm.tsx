@@ -2,15 +2,17 @@ import { Plus, Trash } from "@boxicons/react";
 import "./EntrevistaForm.css";
 import { useEffect, useState } from "react";
 import type { PreguntaEntrevista } from "../../Types/PreguntasEntrevistas";
+import type { estatusTecnica } from "../../Types/Techniques";
 import type { Rol } from "../../Types/Roles";
 import { useParams } from "react-router";
 
 interface TecnicaProps {
     tecnica: any;
+    estatus: estatusTecnica;
 }
 
 
-export default function EntrevistaForm({ tecnica }: TecnicaProps) {
+export default function EntrevistaForm({ tecnica, estatus }: TecnicaProps) {
     const { id_project } = useParams();
     const [preguntasEntrevista, setPreguntasEntrevista] = useState<PreguntaEntrevista[]>([]);
     const [roles, setRoles] = useState<Rol[]>([]);
@@ -78,7 +80,9 @@ export default function EntrevistaForm({ tecnica }: TecnicaProps) {
             fecha_entrevista: fecha,
             duracion: duracion,
             pregunta_entrevista: preguntasEntrevista,
-            notas: notas
+            notas: notas,
+            id_tecnica: tecnica.id,
+            estatus: estatus
         };
 
         try {

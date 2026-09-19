@@ -1,5 +1,6 @@
 import { Plus, Trash } from "@boxicons/react";
 import "./HistoriasUsuarioForm.css";
+import type { estatusTecnica } from "../../Types/Techniques";
 import { useState, useEffect } from "react";
 
 export interface CriterioAceptacion {
@@ -9,15 +10,17 @@ export interface CriterioAceptacion {
 
 interface TecnicaProps {
     tecnica: any;
+    estatus: estatusTecnica;
 }
 
-export default function HistoriasUsuarioForm({ tecnica }: TecnicaProps) {
+export default function HistoriasUsuarioForm({ tecnica, estatus }: TecnicaProps) {
     const [tituloHistoria, setTituloHistoria] = useState("");
     const [como, setComo] = useState("");
     const [quiero, setQuiero] = useState("");
     const [paraQue, setParaQue] = useState("");
     const [prioridad, setPrioridad] = useState("Alta");
     const [storyPoints, setStoryPoints] = useState("");
+    console.log(estatus);
 
     const [criteriosList, setCriteriosList] = useState<CriterioAceptacion[]>([]);
 
@@ -83,6 +86,8 @@ export default function HistoriasUsuarioForm({ tecnica }: TecnicaProps) {
             autor: como,
             objetivo: quiero,
             proposito: paraQue,
+            id_tecnica: tecnica.id,
+            estatus: estatus,
             criterios_aceptacion: criteriosList.map(c => ({
                 texto: c.texto,
                 descripcion: c.texto
@@ -103,7 +108,7 @@ export default function HistoriasUsuarioForm({ tecnica }: TecnicaProps) {
             );
 
             if (!response.ok) {
-                throw new Error("Error al actualizar la historia de usuario");
+                throw new Error(`Error al actualizar la historia de usuario: ${response}`);
             }
 
             const data = await response.json();

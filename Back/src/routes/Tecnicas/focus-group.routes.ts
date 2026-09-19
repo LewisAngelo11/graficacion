@@ -15,7 +15,8 @@ router.post('/:id_subproceso', async (req: Request, res: Response) => {
         id_tecnica_catalogo: Number(3),
         titulo: titulo,
         descripcion: descripcion,
-        id_subproceso: Number(id_subproceso)
+        id_subproceso: Number(id_subproceso),
+        estatus: "Planificada"
       }
     });
 

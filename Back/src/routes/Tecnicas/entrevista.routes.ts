@@ -45,7 +45,8 @@ router.post('/crear_entrevista/:id_subproceso', async (req: Request, res: Respon
         id_tecnica_catalogo: Number(1),
         titulo: titulo,
         descripcion: descripcion,
-        id_subproceso: Number(id_subproceso)
+        id_subproceso: Number(id_subproceso),
+        estatus: "Planificada"
       }
     });
 
@@ -67,7 +68,7 @@ router.post('/crear_entrevista/:id_subproceso', async (req: Request, res: Respon
 router.put('/actualizar_entrevista/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { fecha_entrevista, duracion, id_stakeholder, pregunta_entrevista, notas } = req.body;
+    const { fecha_entrevista, duracion, id_stakeholder, pregunta_entrevista, notas, id_tecnica, estatus } = req.body;
 
     const entrevista = await prisma.entrevista.update({
       where: {
@@ -79,6 +80,16 @@ router.put('/actualizar_entrevista/:id', async (req: Request, res: Response) => 
         fecha_entrevista: fecha_entrevista ? new Date(fecha_entrevista): null,
         duracion: Number(duracion),
         notas: notas,
+      }
+    });
+
+    await prisma.tecnica_recoleccion.update({
+      where: {
+        id_tecnica: Number(id_tecnica)
+      },
+      data: {
+        estatus: estatus,
+        ultima_actualizacion: new Date()
       }
     });
 
